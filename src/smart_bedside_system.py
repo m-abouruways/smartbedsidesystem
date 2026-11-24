@@ -26,13 +26,16 @@ class SmartBedsideSystem:
         self.spo2_hr_sensor.begin()
         self.spo2_hr_sensor.sensor_start_collect()
 
-        self.alarm_on = False                             # Replace None by initializing the alarm status (see User Story #2).
+                                 # Replace None by initializing the alarm status (see User Story #2).
         GPIO.setup(self.BUZZER_PIN, GPIO.OUT)
         self.alarm_on = False
         GPIO.setup(self.BUTTON_PIN, GPIO.IN)
 
-        self.o2_servo = None  # Replace None by initializing the servo motor's PWM instance (see User Story #4).
-        self.o2_valve_angle = None  # Replace None by initializing the valve angle, in degrees (see User Story #4).
+        GPIO.setup(self.O2_SERVO_PIN, GPIO.OUT)
+
+        self.o2_servo = GPIO.PWM(self.O2_SERVO_PIN, 50)
+        self.o2_servo.start(5.0)              # Replace None by initializing the servo motor's PWM instance (see User Story #4).
+        self.o2_valve_angle = (0.0)  # Replace None by initializing the valve angle, in degrees (see User Story #4).
 
     def read_vital_signs(self) -> int:
         spo2 = self.spo2_hr_sensor.get_spo2()
@@ -72,6 +75,15 @@ class SmartBedsideSystem:
         # See User Story #3.
 
     def set_o2_valve_angle(self, angle: float) -> None:
+        if angle < 0 or angle > 180:
+            raise SmartBedsideError()
+
+        duty_cycle = 5.0 + (angle / 180.0) * 5.0
+
+        self.o2_servo.ChangeDutyCycle(duty_cycle)
+
+        self.o2_valve_angle = angle
+
         """
         Set the oxygen delivery valve to the specified angle by controlling the servo motor.
         Args: angle (float): The target valve angle in degrees, between 0 and 180 degrees, inclusive.
@@ -80,6 +92,13 @@ class SmartBedsideSystem:
         # See User Story #4.
 
     def manage_oxygen_valve(self) -> None:
+
+        spo2 = self.read_vital_signs()
+
+        if spo2 < 95:
+            self.set_o2_valve_angle(180)
+        else:
+            self.set_o2_valve_angle(0)
         """
         Automatically regulate the oxygen delivery valve based on the
         patient's blood oxygen saturation (SpO₂).
