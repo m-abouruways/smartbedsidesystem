@@ -59,6 +59,10 @@ class SmartBedsideSystem:
         # See User Story #2.
 
     def stop_alarm(self) -> None:
+
+        if GPIO.input(self.BUTTON_PIN):
+            GPIO.output(self.BUZZER_PIN, False)
+            self.alarm_on = False
         """
         Stop the alarm if the pushbutton is pressed. Otherwise, leave the alarm unchanged.
         """
